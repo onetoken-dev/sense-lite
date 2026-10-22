@@ -3,6 +3,7 @@
 mod agent;
 mod commands;
 mod manager;
+mod power_events;
 mod protocol;
 
 pub use agent::AgentClient;
@@ -55,6 +56,34 @@ pub fn run() {
 
             build_tray(app, &manager)?;
             app.manage(manager);
+
+            // 息屏恢复后自动重放蓝光过滤:
+            // 显卡颜色管线在息屏时被重置,Agent 不会自行重新应用 gamma,
+            // 因此监听显示器点亮事件,把当前护眼档位重新下发一次。
+            #[cfg(windows)]
+            {
+                let m = app.state::<Manager>().inner().clone();
+                if let Ok(mut rx) = power_events::spawn_monitor_on_events() {
+                    tauri::async_runtime::spawn(async move {
+                        while rx.recv().await.is_some() {
+                            // 等显示管线就绪,避免过早下发
+                            tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+                            if let Ok(pkt) = m.qa.get("BluelightShield").await {
+                                let v = pkt
+                                    .get("Result")
+                                    .and_then(|r| r.get("Value"))
+                                    .and_then(|v| v.as_i64());
+                                if let Some(v) = v {
+                                    if v > 0 {
+                                        let _ =
+                                            m.qa.set("BluelightShield", json!(v)).await;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
             Ok(())
         })
         .on_window_event(|window, event| {
