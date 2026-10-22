@@ -358,7 +358,8 @@ function connect(port){ process.env.NODE_TLS_REJECT_UNAUTHORIZED='0';
 | 3 | QA Agent 快速反复连接后停止应答 | ⚠️ 观察到 ~15-20s 恢复;复刻客户端必须长连接复用 |
 | 4 | Acer WMI 类实例枚举为空 | ⚠️ 未提权验证;需在管理员进程复查(或确认本机未实例化 Gaming 类) |
 | 5 | `KeyEvent` 命令语义 | 📄 未逆 |
-| 6 | 安全 | 明文 JSON + 硬编码密钥 + 证书校验关闭 + 无客户端鉴权;`admin.elevatedRun2` 即未授权本地提权面;`C:\Program Files\Acer*Agent\server_key.pem` 全局可读 |
+| 6 | **BluelightShield 息屏后失效** | ⚠️ 滤镜经显卡 gamma/色温管线实现,息屏时被驱动重置,Agent 不会自动重放(官方界面同样受影响)。对策:监听 `GUID_MONITOR_POWERED_ON`,亮屏后重新 Set 当前档位(Sense Lite 已实现,见 `src-tauri/src/power_events.rs`) |
+| 7 | 安全 | 明文 JSON + 硬编码密钥 + 证书校验关闭 + 无客户端鉴权;`admin.elevatedRun2` 即未授权本地提权面;`C:\Program Files\Acer*Agent\server_key.pem` 全局可读 |
 
 ---
 
